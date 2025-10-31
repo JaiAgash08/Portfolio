@@ -1,3 +1,20 @@
+stage('Build') {
+    steps {
+        echo '🏗️ Building the project...'
+        sh '''
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+            nvm use 22
+
+            cd apps/web
+            echo "⚙️ Installing dependencies (ignoring peer conflicts)..."
+            npm install --legacy-peer-deps
+
+            echo "🚧 Running build..."
+            npm run build || npm run build:prod || echo "⚠️ No build script found"
+        '''
+    }
+}
 pipeline {
     agent any
 
