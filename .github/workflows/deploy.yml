@@ -1,63 +1,58 @@
-name: 🚀 Portfolio CI/CD Pipeline
+name: 🚀 Deploy Portfolio to Azure
 
 on:
   push:
     branches:
-      - main  # or master if your default branch is master
-  pull_request:
+      - main
 
 jobs:
-  build:
-    name: 🧩 Build Portfolio
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Checkout repository
+      # 1️⃣ Checkout the repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: ⚙️ Setup Node.js
+      # 2️⃣ Setup Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: '22'
 
-      - name: 📦 Install dependencies
-        run: |
-          cd apps/web
-          npm install
+      # 3️⃣ Install dependencies
+      - name: Install dependencies
+        working-directory: ./apps/web
+        run: npm install
 
-      - name: 🧱 Build the project
-        run: |
-          cd apps/web
-          npm run build
+      # 4️⃣ Build your portfolio
+      - name: Build project
+        working-directory: ./apps/web
+        run: npm run build
 
-      - name: 🧹 Run tests (optional)
-        run: |
-          cd apps/web
-          npm test || echo "No tests found"
+      # 5️⃣ Upload build as artifact
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: portfolio-build
+          path: ./apps/web/build
 
   deploy:
-    name: 🌐 Deploy to GitHub Pages
-    needs: build
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    needs: build-and-deploy
 
     steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-
-      - name: ⚙️ Setup Node.js
-        uses: actions/setup-node@v4
+      # 1️⃣ Download build artifact
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
         with:
-          node-version: 18
+          name: portfolio-build
+          path: ./build
 
-      - name: 📦 Install dependencies and build
-        run: |
-          cd apps/web
-          npm install
-          npm run build
-
-      - name: 🚀 Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
+      # 2️⃣ Deploy to Azure Web App
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: apps/web/dist  # or 'build' if you’re using CRA
+          app-name: YOUR_AZURE_APP_NAME   # 🔁 change this
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ./build
