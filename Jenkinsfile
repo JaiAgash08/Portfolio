@@ -3,6 +3,7 @@ pipeline {
 
     environment {
         NODE_VERSION = "22.0.0"
+        NVM_DIR = "${HOME}/.nvm"
     }
 
     stages {
@@ -12,14 +13,14 @@ pipeline {
                 sh '''
                     # Install Node Version Manager (nvm)
                     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-                    export NVM_DIR="$HOME/.nvm"
-                    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
-                    # Install Node.js version 22
+                    export NVM_DIR="$HOME/.nvm"
+                    . "$NVM_DIR/nvm.sh"
+
+                    # Install and use Node.js 22
                     nvm install ${NODE_VERSION}
                     nvm use ${NODE_VERSION}
 
-                    # Verify
                     node -v
                     npm -v
                 '''
@@ -31,7 +32,7 @@ pipeline {
                 echo 'Running npm install...'
                 sh '''
                     export NVM_DIR="$HOME/.nvm"
-                    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                    . "$NVM_DIR/nvm.sh"
                     nvm use ${NODE_VERSION}
                     npm install
                 '''
@@ -43,7 +44,7 @@ pipeline {
                 echo 'Building project...'
                 sh '''
                     export NVM_DIR="$HOME/.nvm"
-                    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                    . "$NVM_DIR/nvm.sh"
                     nvm use ${NODE_VERSION}
                     npm run build || npm run build:prod || echo "No build script found"
                 '''
@@ -60,7 +61,7 @@ pipeline {
                     fi
 
                     az --version
-                    echo "✅ Deployment placeholder - replace with your real Azure deploy command"
+                    echo "✅ Deployment placeholder - replace with your real az webapp deploy command"
                 '''
             }
         }
