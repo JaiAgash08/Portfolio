@@ -1,67 +1,43 @@
 pipeline {
     agent any
 
-    environment {
-        NODE_VERSION = "22.0.0"
-        NVM_DIR = "${HOME}/.nvm"
-        PATH = "${HOME}/.nvm/versions/node/v22.0.0/bin:${PATH}"
-        APP_DIR = "apps/web"   // change this if your package.json is elsewhere
-    }
-
     stages {
-
-        stage('Checkout Code') {
+        stage('Checkout') {
             steps {
-                echo '📦 Checking out project from GitHub...'
-                checkout scm
-                sh 'ls -la'
+                git branch: 'main', url: 'https://github.com/JaiAgash08/Portfolio'
             }
         }
 
-        stage('Setup Node.js') {
+        stage('Setup Node') {
             steps {
-                echo '🔧 Installing Node.js via NVM...'
+                echo '🔧 Setting up Node.js environment...'
                 sh '''
-                    set -e
-                    rm -rf "$NVM_DIR"
+                    # Remove old NVM if exists
+                    rm -rf ~/.nvm
+                    
+                    # Install NVM
                     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+                    
                     export NVM_DIR="$HOME/.nvm"
-                    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-                    nvm install ${NODE_VERSION}
-                    nvm use ${NODE_VERSION}
+                    [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+                    
+                    # Install Node 22
+                    nvm install 22
+                    nvm use 22
+                    
                     node -v
                     npm -v
                 '''
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Build') {
             steps {
-                echo '📦 Installing npm dependencies...'
+                echo '🏗️ Building the project...'
                 sh '''
-                    export NVM_DIR="$HOME/.nvm"
-                    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-                    nvm use ${NODE_VERSION}
-                    cd ${APP_DIR}
+                    cd apps/web
                     npm install
-                '''
-            }
-        }
-
-        stage('Build Project') {
-            steps {
-                echo '🏗️ Building project...'
-                sh '''
-                    export NVM_DIR="$HOME/.nvm"
-                    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-                    nvm use ${NODE_VERSION}
-                    cd ${APP_DIR}
-                    if [ -f package.json ]; then
-                      npm run build || npm run build:prod || echo "⚠️ No build script found"
-                    else
-                      echo "❌ No package.json found inside ${APP_DIR}"
-                      exit 1
-                    fi
+                    npm run build
                 '''
             }
         }
@@ -70,16 +46,7 @@ pipeline {
             steps {
                 echo '🚀 Deploying to Azure...'
                 sh '''
-                    if ! command -v az &> /dev/null
-                    then
-                        curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-                    fi
-
-                    echo "✅ Azure CLI Installed"
-                    az --version
-
-                    # 🔹 Replace the line below with your actual Azure deploy command
-                    echo "⚙️ Placeholder: Run 'az webapp up' or your deployment script here."
+                    echo "Deployment simulated — add Azure CLI commands here"
                 '''
             }
         }
@@ -87,10 +54,10 @@ pipeline {
 
     post {
         success {
-            echo '✅ Pipeline completed successfully!'
+            echo '✅ Build and Deployment Successful!'
         }
         failure {
-            echo '❌ Pipeline failed — check logs for errors.'
+            echo '❌ Build or Deployment Failed. Check Jenkins logs.'
         }
     }
 }
