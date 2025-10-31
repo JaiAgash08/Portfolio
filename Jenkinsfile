@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    environment {
+        NVM_DIR = "${HOME}/.nvm"
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -10,21 +14,20 @@ pipeline {
 
         stage('Setup Node') {
             steps {
-                echo '🔧 Setting up Node.js environment...'
+                echo '🔧 Installing Node.js via NVM...'
                 sh '''
-                    # Remove old NVM if exists
-                    rm -rf ~/.nvm
-                    
-                    # Install NVM
-                    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-                    
+                    # Install NVM if not present
+                    if [ ! -d "$NVM_DIR" ]; then
+                      curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+                    fi
+
                     export NVM_DIR="$HOME/.nvm"
                     [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-                    
-                    # Install Node 22
+
                     nvm install 22
+                    nvm alias default 22
                     nvm use 22
-                    
+
                     node -v
                     npm -v
                 '''
@@ -35,6 +38,10 @@ pipeline {
             steps {
                 echo '🏗️ Building the project...'
                 sh '''
+                    export NVM_DIR="$HOME/.nvm"
+                    [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+                    nvm use 22
+
                     cd apps/web
                     npm install
                     npm run build
@@ -44,9 +51,13 @@ pipeline {
 
         stage('Deploy to Azure') {
             steps {
-                echo '🚀 Deploying to Azure...'
+                echo '🚀 Deploying to Azure (simulation)...'
                 sh '''
-                    echo "Deployment simulated — add Azure CLI commands here"
+                    export NVM_DIR="$HOME/.nvm"
+                    [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+                    nvm use 22
+
+                    echo "✅ Deployment simulated. Add Azure CLI commands here."
                 '''
             }
         }
