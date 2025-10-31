@@ -1,15 +1,27 @@
 pipeline {
     agent any
 
+    environment {
+        NODE_VERSION = "22.0.0"
+    }
+
     stages {
         stage('Setup Node') {
             steps {
-                echo 'Installing Node.js manually...'
+                echo 'Installing Node.js manually (no sudo)...'
                 sh '''
-                curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-                sudo apt-get install -y nodejs
-                node -v
-                npm -v
+                    # Install Node Version Manager (nvm)
+                    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+                    export NVM_DIR="$HOME/.nvm"
+                    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+                    # Install Node.js version 22
+                    nvm install ${NODE_VERSION}
+                    nvm use ${NODE_VERSION}
+
+                    # Verify
+                    node -v
+                    npm -v
                 '''
             }
         }
@@ -17,14 +29,24 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 echo 'Running npm install...'
-                sh 'npm install'
+                sh '''
+                    export NVM_DIR="$HOME/.nvm"
+                    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                    nvm use ${NODE_VERSION}
+                    npm install
+                '''
             }
         }
 
         stage('Build') {
             steps {
                 echo 'Building project...'
-                sh 'npm run build || npm run build:prod || echo "No build script found"'
+                sh '''
+                    export NVM_DIR="$HOME/.nvm"
+                    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                    nvm use ${NODE_VERSION}
+                    npm run build || npm run build:prod || echo "No build script found"
+                '''
             }
         }
 
@@ -32,12 +54,13 @@ pipeline {
             steps {
                 echo 'Deploying to Azure...'
                 sh '''
-                if ! command -v az &> /dev/null
-                then
-                    curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-                fi
-                az --version
-                echo "✅ Deployment placeholder - replace with your real az webapp deploy command"
+                    # Install Azure CLI if not present
+                    if ! command -v az &> /dev/null; then
+                        curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+                    fi
+
+                    az --version
+                    echo "✅ Deployment placeholder - replace with your real Azure deploy command"
                 '''
             }
         }
